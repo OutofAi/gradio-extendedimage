@@ -46,7 +46,18 @@
 	export let uploading = false;
 	export let active_source: source_type = null;
 	export let fullscreen = false;
-	export let orientation = "9:16"
+
+
+	type Orientation = "9:16" | "1:1" | "16:9";
+	export let orientation: Orientation = "9:16";
+
+
+	export async function handleOrientation(next: Orientation): Promise<void> {
+		// call this on EVERY click (even if already selected)
+		orientation = next;
+		await tick(); // keep if any layout depends on it
+		dispatch("orientation", { value: next }); // let parent know
+	}
 
 	async function handle_upload({
 		detail
@@ -109,6 +120,7 @@
 		upload?: never;
 		select: SelectData;
 		end_stream: never;
+		orientation: { value: Orientation };
 	}>();
 
 	export let dragging = false;
@@ -251,15 +263,15 @@
 		{#if value?.url && !active_streaming}
 
 			<div class:is-selected={orientation === "9:16"}>
-			<IconButton Icon={o916} label="9:16" on:click={() => (orientation = "9:16")} />
+			<IconButton Icon={o916} label="9:16" on:click={() => handleOrientation("9:16")} />
 			</div>
 
 			<div class:is-selected={orientation === "1:1"}>
-			<IconButton Icon={o11} label="1:1" on:click={() => (orientation = "1:1")} />
+			<IconButton Icon={o11} label="1:1" on:click={() => handleOrientation("1:1")} />
 			</div>
 
-			<div class:is-selected={orientation === "16:9"}>
-			<IconButton Icon={o169} label="16:9" on:click={() => (orientation = "16:9")} />
+			<div class:is-selected={orientation === "16:9" }>
+			<IconButton Icon={o169} label="16:9" on:click={() => handleOrientation("16:9")} />
 			</div>
 
 			

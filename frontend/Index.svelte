@@ -83,6 +83,7 @@
 		share: ShareData;
 		clear_status: LoadingStatus;
 		close_stream: string;
+		orientation: never;
 	}>;
 
 	$: {
@@ -207,6 +208,7 @@
 			on:clear={() => {
 				gradio.dispatch("clear");
 			}}
+			on:orientation={({ detail }) => gradio.dispatch("orientation", detail)}
 			on:stream={({ detail }) => gradio.dispatch("stream", detail)}
 			on:drag={({ detail }) => (dragging = detail)}
 			on:upload={() => gradio.dispatch("upload")}

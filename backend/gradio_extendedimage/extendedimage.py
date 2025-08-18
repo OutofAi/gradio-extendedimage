@@ -16,7 +16,7 @@ from gradio import image_utils, utils
 from gradio.components.base import Component, StreamingInput
 from gradio.components.image_editor import WebcamOptions
 from gradio.data_classes import Base64ImageData, ImageData
-from gradio.events import Events
+from gradio.events import Events, EventListener
 from gradio.i18n import I18nData
 
 if TYPE_CHECKING:
@@ -40,6 +40,7 @@ class extendedimage(StreamingInput, Component):
         Events.select,
         Events.upload,
         Events.input,
+        EventListener("orientation", doc="User set a new image orientation")
     ]
 
     data_model = ImageData

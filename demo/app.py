@@ -3,15 +3,15 @@ import gradio as gr
 from gradio_extendedimage import extendedimage
 
 
-example = extendedimage().example_value()
 
-demo = gr.Interface(
-    lambda x:x,
-    extendedimage(),  # interactive version of your component
-    extendedimage(),  # static version of your component
-    # examples=[[example]],  # uncomment this line to view the "example version" of your component
-)
+def internal_fn(evt: gr.EventData):
+    detail = getattr(evt, "data", None) or getattr(evt, "_data", {}) or {}
+    return detail
 
+with gr.Blocks() as demo:
+    src = extendedimage()
+    out = gr.Text()
+    src.orientation(fn=internal_fn, outputs=[out])
 
 if __name__ == "__main__":
     demo.launch()
