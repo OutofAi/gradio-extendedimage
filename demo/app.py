@@ -6,7 +6,7 @@ from gradio_extendedimage import extendedimage
 
 def internal_fn(evt: gr.EventData):
     detail = getattr(evt, "data", None) or getattr(evt, "_data", {}) or {}
-    return detail
+    return detail['value']
 
 with gr.Blocks() as demo:
     src = extendedimage()
