@@ -262,15 +262,15 @@
 	<IconButtonWrapper top_panel={""}>
 		{#if value?.url && !active_streaming}
 
-			<div class:is-selected={orientation === "9:16"}>
+			<div>
 			<IconButton Icon={o916} label="9:16" on:click={() => handleOrientation("9:16")} />
 			</div>
 
-			<div class:is-selected={orientation === "1:1"}>
+			<div>
 			<IconButton Icon={o11} label="1:1" on:click={() => handleOrientation("1:1")} />
 			</div>
 
-			<div class:is-selected={orientation === "16:9" }>
+			<div>
 			<IconButton Icon={o169} label="16:9" on:click={() => handleOrientation("16:9")} />
 			</div>
 
