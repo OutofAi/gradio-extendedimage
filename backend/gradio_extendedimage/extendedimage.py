@@ -40,7 +40,8 @@ class extendedimage(StreamingInput, Component):
         Events.select,
         Events.upload,
         Events.input,
-        EventListener("orientation", doc="User set a new image orientation")
+        EventListener("orientation", doc="User set a new image orientation"),
+        EventListener("stroke", doc="User drew a stroke on the image"),
     ]
 
     data_model = ImageData
@@ -74,6 +75,7 @@ class extendedimage(StreamingInput, Component):
         every: Timer | float | None = None,
         inputs: Component | Sequence[Component] | set[Component] | None = None,
         show_label: bool | None = None,
+        selectable: bool = False,
         show_download_button: bool = True,
         container: bool = True,
         scale: int | None = None,
@@ -125,7 +127,7 @@ class extendedimage(StreamingInput, Component):
             webcam_constraints: A dictionary that allows developers to specify custom media constraints for the webcam stream. This parameter provides flexibility to control the video stream's properties, such as resolution and front or rear camera on mobile devices. See $demo/webcam_constraints
         """
         self.format = format
-
+        self.selectable = selectable
         self.webcam_options = (
             webcam_options if webcam_options is not None else WebcamOptions()
         )

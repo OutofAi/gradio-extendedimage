@@ -121,19 +121,157 @@
 		select: SelectData;
 		end_stream: never;
 		orientation: { value: Orientation };
+		stroke: { points: [number, number][]; done: boolean };
 	}>();
+
+	let isDrawing = false;
+	let points: [number, number][] = [];
+	let frameEl: HTMLDivElement | null = null;
+
+	function getPointFromEvent(e: PointerEvent): [number, number] | null {
+	// Find the actual <img> rendered by <Image />
+	const img = frameEl?.querySelector("img") as HTMLImageElement | null;
+	if (!img) return null;
+
+	const rect = img.getBoundingClientRect();
+	const x = e.clientX - rect.left;
+	const y = e.clientY - rect.top;
+
+	// outside image bounds
+	if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+
+	// Convert to image pixel coordinates (natural size)
+	const xn = x / rect.width;
+	const yn = y / rect.height;
+
+	const px = Math.round(xn * img.naturalWidth);
+	const py = Math.round(yn * img.naturalHeight);
+
+	return [px, py];
+	}
+
+	let moved = false;
+
+	function onImgDragStart(e: DragEvent) {
+		e.preventDefault();
+	}
+
+	function onPointerDown(e: PointerEvent) {
+	if (!selectable) return;
+	// only left-click / primary touch
+	if (e.pointerType === "mouse" && e.button !== 0) return;
+
+	const p = getPointFromEvent(e);
+	if (!p) return;
+
+	isDrawing = true;
+	points = [p];
+	drawOverlay();
+
+	// keep receiving move/up even if pointer leaves element
+	(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+
+	// optional: prevent text selection / drag ghosting
+	e.preventDefault();
+	moved = false;
+	}
+
+	const MIN_DIST_PX = 2;
+
+	function onPointerMove(e: PointerEvent) {
+	if (!isDrawing) return;
+	moved = true;
+
+	const p = getPointFromEvent(e);
+	if (!p) return;
+
+	const last = points[points.length - 1];
+	if (last[0] === p[0] && last[1] === p[1]) return;
+
+	const dx = p[0] - last[0];
+	const dy = p[1] - last[1];
+	if (dx*dx + dy*dy < MIN_DIST_PX*MIN_DIST_PX) return;
+
+	points = [...points, p];
+
+	// ✅ live draw
+	drawOverlay();
+	}
+
+
+	let overlayCanvas: HTMLCanvasElement | null = null;
+
+	function drawOverlay() {
+	const canvas = overlayCanvas;
+	const img = frameEl?.querySelector("img") as HTMLImageElement | null;
+	if (!canvas || !img) return;
+
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return;
+
+	const rect = img.getBoundingClientRect();
+	const dpr = window.devicePixelRatio || 1;
+
+	// Match canvas to displayed image size (crisp)
+	canvas.style.width = `${rect.width}px`;
+	canvas.style.height = `${rect.height}px`;
+	canvas.width = Math.round(rect.width * dpr);
+	canvas.height = Math.round(rect.height * dpr);
+
+	ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+	ctx.clearRect(0, 0, rect.width, rect.height);
+
+	if (points.length < 2) return;
+
+	// Convert image-pixel points -> displayed-pixel points
+	const nw = img.naturalWidth || 1;
+	const nh = img.naturalHeight || 1;
+
+	ctx.lineWidth = 2;
+	ctx.lineJoin = "round";
+	ctx.lineCap = "round";
+	ctx.strokeStyle = "red"; // change if you want
+
+	ctx.beginPath();
+	for (let i = 0; i < points.length; i++) {
+		const [px, py] = points[i];
+		const x = (px / nw) * rect.width;
+		const y = (py / nh) * rect.height;
+		if (i === 0) ctx.moveTo(x, y);
+		else ctx.lineTo(x, y);
+	}
+	ctx.stroke();
+	}
+
+
+	function endStroke(e: PointerEvent) {
+	if (!isDrawing) return;
+	isDrawing = false;
+
+	// final emit
+	drawOverlay(); // final paint
+	dispatch("stroke", { points, done: true });
+	}
+
+	function clearOverlay() {
+	const canvas = overlayCanvas;
+	if (!canvas) return;
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return;
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	}
+
 
 	export let dragging = false;
 
 	$: dispatch("drag", dragging);
 
 	function handle_click(evt: MouseEvent): void {
+		if (moved) return; 
 		let coordinates = get_coordinates_of_clicked_image(evt);
-		if (coordinates) {
-			dispatch("select", { index: coordinates, value: null });
-		}
+		if (coordinates) dispatch("select", { index: coordinates, value: null });
 	}
-
+	
 	$: if (!active_source && sources) {
 		active_source = sources[0];
 	}
@@ -252,9 +390,21 @@
 		{:else if value !== null && !streaming}
 			<!-- svelte-ignore a11y-click-events-have-key-events-->
 			<!-- svelte-ignore a11y-no-static-element-interactions-->
-			<div class:selectable class="image-frame" on:click={handle_click}>
+			<div
+				bind:this={frameEl}
+				class:selectable
+				class="image-frame"
+				on:dragstart|preventDefault={onImgDragStart}
+				on:pointerdown={onPointerDown}
+				on:pointermove={onPointerMove}
+				on:pointerup={endStroke}
+				on:pointercancel={endStroke}
+				on:click={handle_click}
+				>
 				<Image src={value.url} alt={value.alt_text} />
+				<canvas bind:this={overlayCanvas} class="stroke-overlay"></canvas>
 			</div>
+
 		{/if}
 	</div>
 	<div class="bottom-row">
@@ -322,9 +472,13 @@
 
 
 	.image-frame :global(img) {
-		width: var(--size-full);
-		height: var(--size-full);
-		object-fit: scale-down;
+	width: var(--size-full);
+	height: var(--size-full);
+	object-fit: scale-down;
+
+	-webkit-user-drag: none; /* ✅ stops ghost drag on Safari/Chrome */
+	user-select: none;       /* ✅ stops selection */
+	touch-action: none;      /* ✅ makes pointer events behave on touch */
 	}
 
 	.upload-container {
@@ -355,8 +509,15 @@
 	}
 
 	.image-frame {
-		object-fit: cover;
-		width: 100%;
-		height: 100%;
+	position: relative; /* ✅ needed for overlay positioning */
+	object-fit: cover;
+	width: 100%;
+	height: 100%;
+	}
+
+	.stroke-overlay {
+	position: absolute;
+	inset: 0;
+	pointer-events: none; /* ✅ don’t block pointer events */
 	}
 </style>

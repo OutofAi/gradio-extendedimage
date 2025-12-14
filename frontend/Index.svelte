@@ -48,7 +48,7 @@
 	export let width: number | undefined;
 	export let stream_every: number;
 
-	export let _selectable = false;
+	export let selectable = false;
 	export let container = true;
 	export let scale: number | null = null;
 	export let min_width: number | undefined = undefined;
@@ -84,6 +84,7 @@
 		clear_status: LoadingStatus;
 		close_stream: string;
 		orientation: never;
+		stroke: { points: [number, number][]; done: boolean };
 	}>;
 
 	$: {
@@ -161,7 +162,7 @@
 			{label}
 			{show_label}
 			{show_download_button}
-			selectable={_selectable}
+			selectable={selectable}
 			{show_share_button}
 			i18n={gradio.i18n}
 			{show_fullscreen_button}
@@ -200,7 +201,7 @@
 			bind:active_source
 			bind:value
 			bind:dragging
-			selectable={_selectable}
+			selectable={selectable}
 			{root}
 			{sources}
 			{fullscreen}
@@ -209,6 +210,7 @@
 				gradio.dispatch("clear");
 			}}
 			on:orientation={({ detail }) => gradio.dispatch("orientation", detail)}
+			on:stroke={({ detail }) => gradio.dispatch("stroke", detail)}
 			on:stream={({ detail }) => gradio.dispatch("stream", detail)}
 			on:drag={({ detail }) => (dragging = detail)}
 			on:upload={() => gradio.dispatch("upload")}
