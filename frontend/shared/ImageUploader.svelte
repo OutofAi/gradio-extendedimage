@@ -225,31 +225,40 @@
 	const rect = img.getBoundingClientRect();
 	const dpr = window.devicePixelRatio || 1;
 
-	// Match canvas to displayed image size (crisp)
+	// Canvas matches the <img> element box
 	canvas.style.width = `${rect.width}px`;
 	canvas.style.height = `${rect.height}px`;
 	canvas.width = Math.round(rect.width * dpr);
 	canvas.height = Math.round(rect.height * dpr);
 
-	ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+	ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 	ctx.clearRect(0, 0, rect.width, rect.height);
 
 	if (points.length < 2) return;
 
-	// Convert image-pixel points -> displayed-pixel points
 	const nw = img.naturalWidth || 1;
 	const nh = img.naturalHeight || 1;
 
-	ctx.lineWidth = 6;  
+	// Same "scale-down" drawn area calculation as getPointFromEvent
+	const scale = Math.min(rect.width / nw, rect.height / nh, 1);
+	const drawnW = nw * scale;
+	const drawnH = nh * scale;
+	const padX = (rect.width - drawnW) / 2;
+	const padY = (rect.height - drawnH) / 2;
+
+	ctx.lineWidth = 2;
 	ctx.lineJoin = "round";
 	ctx.lineCap = "round";
-	ctx.strokeStyle = "rgba(0, 120, 255, 0.5)"; 
+	ctx.strokeStyle = "red";
 
 	ctx.beginPath();
 	for (let i = 0; i < points.length; i++) {
 		const [px, py] = points[i];
-		const x = (px / nw) * rect.width;
-		const y = (py / nh) * rect.height;
+
+		// Map image pixels -> drawn area inside the <img> box
+		const x = padX + (px / nw) * drawnW;
+		const y = padY + (py / nh) * drawnH;
+
 		if (i === 0) ctx.moveTo(x, y);
 		else ctx.lineTo(x, y);
 	}

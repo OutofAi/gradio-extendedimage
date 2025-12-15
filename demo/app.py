@@ -19,5 +19,7 @@ with gr.Blocks() as demo:
     img.stroke(fn=on_stroke, outputs=out)
     img.orientation(fn=internal_fn, outputs=[orientation])
 
-demo.launch()
+if __name__ == '__main__':
+    demo.launch()
+
 
