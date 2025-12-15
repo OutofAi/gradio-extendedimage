@@ -75,6 +75,7 @@ class extendedimage(StreamingInput, Component):
         every: Timer | float | None = None,
         inputs: Component | Sequence[Component] | set[Component] | None = None,
         show_label: bool | None = None,
+        show_orientations: bool = True,
         selectable: bool = False,
         show_download_button: bool = True,
         container: bool = True,
@@ -128,6 +129,7 @@ class extendedimage(StreamingInput, Component):
         """
         self.format = format
         self.selectable = selectable
+        self.show_orientations = show_orientations
         self.webcam_options = (
             webcam_options if webcam_options is not None else WebcamOptions()
         )

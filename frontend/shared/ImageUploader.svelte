@@ -23,6 +23,8 @@
 	export let value: null | FileData | Base64File = null;
 	export let label: string | undefined = undefined;
 	export let show_label: boolean;
+	export let show_orientations: boolean = true;
+
 
 	type source_type = "upload" | "webcam" | "clipboard" | "microphone" | null;
 
@@ -429,27 +431,23 @@
 
 		{/if}
 	</div>
-	<div class="bottom-row">
-
-	<IconButtonWrapper top_panel={""}>
-		{#if value?.url && !active_streaming}
-
-			<div>
-			<IconButton Icon={o916} label="9:16" on:click={() => handleOrientation("9:16")} />
-			</div>
-
-			<div>
-			<IconButton Icon={o11} label="1:1" on:click={() => handleOrientation("1:1")} />
-			</div>
-
-			<div>
-			<IconButton Icon={o169} label="16:9" on:click={() => handleOrientation("16:9")} />
-			</div>
-
-			
-		{/if}
-	</IconButtonWrapper>
-	</div>
+	{#if show_orientations}
+		<div class="bottom-row">
+			<IconButtonWrapper top_panel={""}>
+			{#if value?.url && !active_streaming}
+				<div>
+				<IconButton Icon={o916} label="9:16" on:click={() => handleOrientation("9:16")} />
+				</div>
+				<div>
+				<IconButton Icon={o11} label="1:1" on:click={() => handleOrientation("1:1")} />
+				</div>
+				<div>
+				<IconButton Icon={o169} label="16:9" on:click={() => handleOrientation("16:9")} />
+				</div>
+			{/if}
+			</IconButtonWrapper>
+		</div>
+	{/if}
 
 	{#if sources.length > 1 || sources.includes("clipboard")}
 		

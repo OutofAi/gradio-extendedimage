@@ -41,6 +41,7 @@
 	let old_value: null | FileData = null;
 	export let label: string;
 	export let show_label: boolean;
+	export let show_orientations: boolean = true;
 	export let show_download_button: boolean;
 	export let root: string;
 
@@ -229,6 +230,7 @@
 			}}
 			{label}
 			{show_label}
+			{show_orientations}
 			{pending}
 			{streaming}
 			{webcam_options}
