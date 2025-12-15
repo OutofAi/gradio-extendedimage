@@ -129,26 +129,39 @@
 	let frameEl: HTMLDivElement | null = null;
 
 	function getPointFromEvent(e: PointerEvent): [number, number] | null {
-	// Find the actual <img> rendered by <Image />
 	const img = frameEl?.querySelector("img") as HTMLImageElement | null;
 	if (!img) return null;
 
 	const rect = img.getBoundingClientRect();
-	const x = e.clientX - rect.left;
-	const y = e.clientY - rect.top;
+	const nw = img.naturalWidth || 0;
+	const nh = img.naturalHeight || 0;
+	if (!nw || !nh) return null;
 
-	// outside image bounds
-	if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+	// Pointer position in element coordinates
+	const ex = e.clientX - rect.left;
+	const ey = e.clientY - rect.top;
 
-	// Convert to image pixel coordinates (natural size)
-	const xn = x / rect.width;
-	const yn = y / rect.height;
+	// Compute how the image is actually drawn inside the <img> box with object-fit: scale-down
+	const scale = Math.min(rect.width / nw, rect.height / nh, 1); // scale-down = contain, but never upscale
+	const drawnW = nw * scale;
+	const drawnH = nh * scale;
 
-	const px = Math.round(xn * img.naturalWidth);
-	const py = Math.round(yn * img.naturalHeight);
+	const padX = (rect.width - drawnW) / 2;
+	const padY = (rect.height - drawnH) / 2;
+
+	// Convert to coordinates within the drawn image (not the element box)
+	const ix = ex - padX;
+	const iy = ey - padY;
+
+	// If pointer is in the letterboxed area, ignore
+	if (ix < 0 || iy < 0 || ix > drawnW || iy > drawnH) return null;
+
+	const px = Math.round((ix / drawnW) * nw);
+	const py = Math.round((iy / drawnH) * nh);
 
 	return [px, py];
 	}
+
 
 	let moved = false;
 
